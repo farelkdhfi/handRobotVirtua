@@ -7,8 +7,40 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment, Text, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { Wifi, Activity, ScanFace, Box, Lock, Target, CheckCircle } from 'lucide-react';
+// Import Framer Motion
+import { motion, AnimatePresence } from 'framer-motion';
 
-// --- 1. KOMPONEN PARTIKEL ---
+// --- VARIANT ANIMASI (ELEGANT PRESETS) ---
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { type: "spring", stiffness: 100, damping: 20 }
+  }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const scaleIn = {
+  hidden: { scale: 0.9, opacity: 0 },
+  visible: { 
+    scale: 1, 
+    opacity: 1,
+    transition: { duration: 0.4, ease: "easeOut" }
+  }
+};
+
+// --- 1. KOMPONEN PARTIKEL (TETAP) ---
 const ParticleBurst = ({ position, color, onComplete }) => {
   const count = 20;
   const [particles] = useState(() =>
@@ -58,7 +90,7 @@ const ParticleBurst = ({ position, color, onComplete }) => {
   );
 };
 
-// --- 2. MECH BONE (LOW POLY) ---
+// --- 2. MECH BONE (LOW POLY) (TETAP) ---
 const MechBone = ({ start, end, isPalm = false }) => {
   const direction = new THREE.Vector3().subVectors(end, start);
   const length = direction.length();
@@ -85,7 +117,7 @@ const MechBone = ({ start, end, isPalm = false }) => {
   );
 };
 
-// --- 3. MECH JOINT ---
+// --- 3. MECH JOINT (TETAP) ---
 const MechJoint = ({ position, size = 0.3, isTip = false }) => {
   return (
     <group position={position}>
@@ -102,7 +134,7 @@ const MechJoint = ({ position, size = 0.3, isTip = false }) => {
   );
 };
 
-// --- 4. ZONA SORTING ---
+// --- 4. ZONA SORTING (TETAP) ---
 const SortingZone = ({ position, color, label }) => {
   const ringRef = useRef();
   useFrame((state, delta) => {
@@ -147,7 +179,7 @@ const SortingZone = ({ position, color, label }) => {
   );
 };
 
-// --- 5. SMART CUBE ---
+// --- 5. SMART CUBE (TETAP) ---
 const SmartCube = ({
   landmarks, isGripping, startPos, color, targetZoneX,
   id, activeId, onGrab, onRelease, onScore, onFail
@@ -290,7 +322,7 @@ const SmartCube = ({
   );
 };
 
-// --- 6. HAND 3D ---
+// --- 6. HAND 3D (TETAP) ---
 const Hand3D = ({ landmarks }) => {
   const connections = [
     [0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8],
@@ -332,10 +364,7 @@ const Hand3D = ({ landmarks }) => {
   );
 };
 
-// --- 7. DASHBOARD UTAMA (RESPONSIVE) ---
-// ... (Import dan komponen kecil lainnya Tetap Sama) ...
-
-// --- 7. DASHBOARD UTAMA (UPDATED LAYOUT) ---
+// --- 7. DASHBOARD UTAMA (UPDATED DENGAN FRAMER MOTION) ---
 const HandRobotDashboard = () => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
@@ -343,7 +372,6 @@ const HandRobotDashboard = () => {
   const [score, setScore] = useState(0);
   const [explosions, setExplosions] = useState([]);
 
-  // State dan Handlers (Tetap sama, tidak berubah)
   const [handData, setHandData] = useState({
     landmarks: [],
     systemStatus: 'IDLE',
@@ -423,32 +451,63 @@ const HandRobotDashboard = () => {
   }, [onResults]);
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white p-2 sm:p-4 overflow-hidden selection:bg-cyan-500/30 font-sans">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col h-screen bg-black text-white p-2 sm:p-4 overflow-hidden selection:bg-cyan-500/30 font-sans"
+    >
       
-      {/* HEADER */}
-      <header className="flex justify-between items-center mb-3 sm:mb-4 z-10 shrink-0">
+      {/* HEADER - ANIMATED */}
+      <motion.header 
+        variants={fadeInUp}
+        className="flex justify-between items-center mb-3 sm:mb-4 z-10 shrink-0"
+      >
         <div className="flex items-center gap-3">
           <div>
-            <h1 className='text-xl sm:text-2xl md:text-3xl bg-linear-120 from-amber-100 to-white bg-clip-text text-transparent font-bold'>Hand Robot Simulation</h1>
-            <p className="text-[10px] sm:text-xs text-neutral-500 mt-1">PROJECT UAS VISI KOMPUTER DAN ROBOTIKA</p>
+            <motion.h1 
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className='text-xl sm:text-2xl md:text-3xl bg-linear-120 from-amber-100 to-white bg-clip-text text-transparent font-bold'
+            >
+              Hand Robot Simulation
+            </motion.h1>
+            <motion.p 
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-[10px] sm:text-xs text-neutral-500 mt-1"
+            >
+              PROJECT UAS VISI KOMPUTER DAN ROBOTIKA
+            </motion.p>
           </div>
         </div>
         <div className="flex gap-4">
-          <div className="flex items-center gap-2 text-xs text-emerald-400 font-mono">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 0.5 }}
+            className="flex items-center gap-2 text-xs text-emerald-400 font-mono"
+          >
             <Wifi size={14} className="animate-pulse" /> ONLINE
-          </div>
+          </motion.div>
         </div>
-      </header>
+      </motion.header>
 
       {/* CONTENT AREA */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0 overflow-hidden">
         
-        {/* SIDEBAR: overflow-hidden di sini agar container utama tidak scroll */}
-        <aside className="w-full lg:w-[350px] xl:w-[400px] flex flex-col gap-4 overflow-hidden shrink-0">
+        {/* SIDEBAR - STAGGERED CHILDREN ANIMATION */}
+        <motion.aside 
+          variants={staggerContainer}
+          className="w-full lg:w-[350px] xl:w-[400px] flex flex-col gap-4 overflow-hidden shrink-0"
+        >
           
-          {/* 1. WEBCAM FEED CONTAINER (FIXED / STATIC) */}
-          {/* shrink-0 memastikan webcam tidak mengecil/gepeng */}
-          <div className="relative rounded-xl overflow-hidden bg-neutral-900 border border-white/10 shadow-lg aspect-video shrink-0 z-10">
+          {/* 1. WEBCAM FEED CONTAINER */}
+          <motion.div 
+            variants={scaleIn}
+            className="relative rounded-xl overflow-hidden bg-neutral-900 border border-white/10 shadow-lg aspect-video shrink-0 z-10"
+          >
             <Webcam 
               ref={webcamRef} 
               className="absolute top-0 left-0 w-full h-full object-cover" 
@@ -458,44 +517,83 @@ const HandRobotDashboard = () => {
               ref={canvasRef} 
               className="absolute top-0 left-0 w-full h-full object-cover scale-x-[-1]" 
             />
-            <div className="absolute top-2 left-2 flex items-center gap-2">
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="absolute top-2 left-2 flex items-center gap-2"
+            >
               <span className={`w-2 h-2 rounded-full animate-ping ${handData.systemStatus === 'TRACKING ACTIVE' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
               <span className="text-[10px] text-white bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm border border-white/10 font-mono">CAM-01 FEED</span>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* 2. SCROLLABLE STATS AREA */}
-          {/* flex-1: ambil sisa tinggi, overflow-y-auto: scroll internal */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-2">
+          <motion.div 
+            variants={fadeInUp}
+            className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-2"
+          >
             
-            <div className="bg-neutral-900/50 p-4 rounded-xl space-y-4 backdrop-blur-sm border border-white/5 flex flex-col min-h-min">
-              <h3 className="text-white flex items-center gap-2 text-xs font-bold uppercase tracking-wider sticky top-0 bg-neutral-900/0 backdrop-blur-md py-2 z-10 -mt-2">
+            <motion.div 
+              variants={staggerContainer}
+              className="bg-neutral-900/50 p-4 rounded-xl space-y-4 backdrop-blur-sm border border-white/5 flex flex-col min-h-min"
+            >
+              <motion.h3 variants={fadeInUp} className="text-white flex items-center gap-2 text-xs font-bold uppercase tracking-wider sticky top-0 bg-neutral-900/0 backdrop-blur-md py-2 z-10 -mt-2">
                 <Activity size={14} className="text-amber-200" /> System Diagnostics
-              </h3>
+              </motion.h3>
               
-              {/* Score Card */}
-              <div className="bg-black/80 p-4 rounded-xl shadow-inner border border-white/5 flex items-center justify-between shrink-0">
+              {/* Score Card - Interactive Hover */}
+              <motion.div 
+                variants={fadeInUp}
+                whileHover={{ scale: 1.02, backgroundColor: "rgba(0,0,0,0.9)" }}
+                className="bg-black/80 p-4 rounded-xl shadow-inner border border-white/5 flex items-center justify-between shrink-0 cursor-default"
+              >
                 <div>
                   <p className="text-[10px] text-neutral-400 uppercase font-mono">Correct Performance</p>
-                  <p className="text-xl font-semibold text-white glow-text tabular-nums">{score}</p>
+                  <motion.p 
+                    key={score} // Key change triggers animation re-render
+                    initial={{ scale: 1.5, color: "#4ade80" }}
+                    animate={{ scale: 1, color: "#ffffff" }}
+                    className="text-xl font-semibold text-white glow-text tabular-nums"
+                  >
+                    {score}
+                  </motion.p>
                 </div>
                 <CheckCircle size={32} className="text-amber-100/80" />
-              </div>
+              </motion.div>
 
               {/* Grid Stats */}
               <div className="grid grid-cols-2 gap-3 shrink-0">
-                <div className={`px-4 py-2 rounded-xl text-[10px] sm:text-xs font-bold flex justify-center items-center text-center transition-all duration-300 border ${handData.gesture === 'GRIPPING' ? 'bg-amber-500/20 border-amber-500/50 text-amber-200' : 'bg-white/5 border-white/5 text-neutral-400'}`}>
+                <motion.div 
+                  variants={fadeInUp}
+                  className={`px-4 py-2 rounded-xl text-[10px] sm:text-xs font-bold flex justify-center items-center text-center transition-all duration-300 border ${handData.gesture === 'GRIPPING' ? 'bg-amber-500/20 border-amber-500/50 text-amber-200' : 'bg-white/5 border-white/5 text-neutral-400'}`}
+                >
                   ACTUATOR: <br/> {handData.gesture}
-                </div>
-                <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                </motion.div>
+                
+                <motion.div variants={fadeInUp} className="p-2 rounded-xl bg-white/5 border border-white/5">
                   <p className="text-[9px] text-neutral-400 uppercase font-mono">Confidence</p>
-                  <p className={`text-sm font-bold ${handData.confidence > 80 ? 'text-emerald-400' : 'text-yellow-500'}`}>{handData.confidence}%</p>
-                </div>
-                <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                  <div className="flex items-baseline gap-1">
+                    <motion.p 
+                      animate={{ opacity: [0.8, 1, 0.8] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className={`text-sm font-bold ${handData.confidence > 80 ? 'text-emerald-400' : 'text-yellow-500'}`}
+                    >
+                      {handData.confidence}%
+                    </motion.p>
+                  </div>
+                </motion.div>
+                
+                <motion.div variants={fadeInUp} className="p-2 rounded-xl bg-white/5 border border-white/5">
                   <p className="text-[9px] text-neutral-400 uppercase font-mono">Hand Detected</p>
                   <p className="text-sm font-bold text-white flex items-center gap-2"><ScanFace size={14} className="text-slate-400" /> {handData.handedness}</p>
-                </div>
-                <div className="col-span-2 bg-white/5 p-2 rounded-xl border border-white/5 flex items-center justify-between">
+                </motion.div>
+                
+                <motion.div 
+                  variants={fadeInUp}
+                  animate={{ borderColor: activeGrabId ? "rgba(251, 191, 36, 0.4)" : "rgba(255, 255, 255, 0.05)" }}
+                  className="col-span-2 bg-white/5 p-2 rounded-xl border border-white/5 flex items-center justify-between"
+                >
                   <div className="flex flex-col gap-y-1 p-1">
                     <p className="text-[9px] text-neutral-400 uppercase font-mono">Target Lock</p>
                     <div className='flex items-center gap-x-2'>
@@ -505,35 +603,63 @@ const HandRobotDashboard = () => {
                       </p>
                     </div>
                   </div>
-                  {activeGrabId && <Lock size={14} className="text-white mr-2" />}
-                </div>
+                  {activeGrabId && (
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                    >
+                       <Lock size={14} className="text-white mr-2" />
+                    </motion.div>
+                  )}
+                </motion.div>
               </div>
 
               {/* Log Area */}
-              <div className="mt-4">
+              <motion.div variants={fadeInUp} className="mt-4">
                 <p className="text-[9px] text-neutral-500 uppercase mb-1 font-mono">System Log</p>
                 <div className="p-2 bg-black/80 border border-neutral-800 text-neutral-400 h-32 overflow-y-auto text-[10px] rounded-lg space-y-1 font-mono custom-scrollbar">
                   <p className="text-neutral-600">-- [SYSTEM INIT] Core modules loaded...</p>
                   <div className="border-t border-neutral-800 pt-1 mt-1">
                     {handData.landmarks.length > 0 ? (
-                      <>
-                        <p className="text-emerald-500">{'>'} TRACKING ACTIVE</p>
-                        {handData.gesture === 'GRIPPING' && <p className="text-rose-400 bg-rose-900/20 inline-block px-1 rounded mt-1">{'>'} GRIP_EVENT_DETECTED</p>}
-                      </>
+                      <AnimatePresence mode="popLayout">
+                        <motion.p 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="text-emerald-500"
+                        >
+                          {'>'} TRACKING ACTIVE
+                        </motion.p>
+                        {handData.gesture === 'GRIPPING' && (
+                          <motion.p 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="text-rose-400 bg-rose-900/20 inline-block px-1 rounded mt-1"
+                          >
+                            {'>'} GRIP_EVENT_DETECTED
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     ) : (
                       <p className="text-amber-500/80 animate-pulse">{'>'} WAITING FOR OPERATOR...</p>
                     )}
                   </div>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
-          </div>
-        </aside>
+          </motion.div>
+        </motion.aside>
 
-        {/* MAIN CANVAS AREA (Tetap Sama) */}
-        <section className="flex-1 relative bg-linear-to-br from-neutral-900 to-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl group min-h-[300px]">
+        {/* MAIN CANVAS AREA - FADE IN TAPI DALAMNYA TETAP PURE REACT THREE FIBER */}
+        <motion.section 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "circOut" }}
+          className="flex-1 relative bg-linear-to-br from-neutral-900 to-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl group min-h-[300px]"
+        >
           <div className="absolute inset-0">
+            {/* CANVAS TIDAK DI-WRAPP DENGAN MOTION UNTUK MENGHINDARI KONFLIK LOOP RENDERING */}
             <Canvas camera={{ position: [0, 4, 16], fov: 40 }} shadows resize={{ scroll: false }}>
               <ambientLight intensity={0.5} />
               <pointLight position={[10, 10, 10]} intensity={1.5} color="#06b6d4" />
@@ -574,13 +700,18 @@ const HandRobotDashboard = () => {
             </Canvas>
           </div>
 
-          <div className="absolute bottom-4 right-4 text-[10px] text-slate-400 bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10 flex items-center shadow-lg">
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="absolute bottom-4 right-4 text-[10px] text-slate-400 bg-black/60 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10 flex items-center shadow-lg"
+          >
             <Box size={12} className="inline mr-2 text-cyan-400" /> 
             <span className="font-mono tracking-wide">MISSION: SORT COLORS TO ZONES</span>
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
