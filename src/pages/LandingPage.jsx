@@ -1,160 +1,220 @@
-import React, { useMemo } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Canvas } from '@react-three/fiber';
+import { MeshDistortMaterial, Sphere, Environment, Float, SpotLight, useProgress } from '@react-three/drei';
+import { ArrowRight, ChevronRight, Layers } from 'lucide-react';
 
+// --- 1. KOMPONEN 3D: THE LIQUID CORE ---
+const LiquidCore = () => {
+  // State untuk menangani responsivitas ukuran bola 3D
+  const [scale, setScale] = useState(1.8);
+
+  useEffect(() => {
+    const handleResize = () => {
+      // Perkecil bola di layar mobile agar tidak menutupi teks
+      if (window.innerWidth < 768) {
+        setScale(1.2);
+      } else {
+        setScale(1.8);
+      }
+    };
+
+    // Set awal
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <>
+      <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
+        <Sphere args={[1, 100, 100]} scale={scale}>
+          <MeshDistortMaterial
+            color="#1c1c1c"
+            attach="material"
+            distort={0.4}
+            speed={2}
+            roughness={0.2}
+            metalness={0.9}
+            bumpScale={0.005}
+            clearcoat={1}
+            clearcoatRoughness={0.1}
+            radius={1}
+          />
+        </Sphere>
+      </Float>
+
+      <ambientLight intensity={0.2} />
+      
+      <SpotLight
+        position={[-5, 5, 5]}
+        angle={0.5}
+        penumbra={1}
+        intensity={200}
+        color="#3b82f6"
+        distance={20}
+      />
+
+      <SpotLight
+        position={[5, 5, 2]}
+        angle={0.5}
+        penumbra={1}
+        intensity={100}
+        color="#ffffff"
+        distance={20}
+      />
+
+      <Environment preset="city" />
+    </>
+  );
+};
+
+// --- 2. MAIN COMPONENT ---
 const LandingPage = () => {
-    // 1. Generate data partikel secara random (Posisi, Ukuran, Durasi)
-    // Menggunakan useMemo agar tidak re-generate setiap kali komponen render ulang
-    const particles = useMemo(() => {
-        return Array.from({ length: 30 }).map((_, i) => ({
-            id: i,
-            x: Math.random() * 100, // Posisi X (0-100%)
-            y: Math.random() * 100, // Posisi Y (0-100%)
-            size: Math.random() * 3 + 1, // Ukuran 1px - 4px
-            duration: Math.random() * 3 + 2, // Durasi 2s - 5s
-            delay: Math.random() * 2, // Delay agar tidak muncul serentak
-        }));
-    }, []);
+  const { active, progress } = useProgress();
+  const [isLoaded, setIsLoaded] = useState(false);
 
-    // Varian animasi untuk Stagger Effect (muncul berurutan)
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.5,
-                delayChildren: 1,
-            },
-        },
-    };
+  useEffect(() => {
+    if (!active && progress === 100) {
+      const timer = setTimeout(() => setIsLoaded(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [active, progress]);
 
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0, filter: "blur(10px)" },
-        visible: {
-            y: 0,
-            opacity: 1,
-            filter: "blur(0px)",
-            transition: {
-                duration: 0.8,
-                ease: [0.25, 0.4, 0.25, 1],
-            },
-        },
-    };
-
-    return (
-        <div className="relative h-screen bg-neutral-950 flex justify-center items-center text-white flex-col overflow-hidden selection:bg-amber-500/30">
-            
-            {/* Radial Gradient untuk Vignette */}
-            <div className="absolute inset-0 bg-radial-gradient from-transparent via-neutral-950/50 to-neutral-950 pointer-events-none z-10"></div>
-
-            {/* --- PARTICLE EFFECT LAYER --- */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {particles.map((particle) => (
-                    <motion.div
-                        key={particle.id}
-                        className="absolute rounded-full bg-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.5)]"
-                        style={{
-                            left: `${particle.x}%`,
-                            top: `${particle.y}%`,
-                            width: particle.size,
-                            height: particle.size,
-                        }}
-                        animate={{
-                            opacity: [0, 0.8, 0], // Muncul, terang, lalu hilang
-                            y: [0, -20], // Sedikit bergerak ke atas (floating)
-                            scale: [0, 1.2, 0], // Membesar lalu mengecil
-                        }}
-                        transition={{
-                            duration: particle.duration,
-                            repeat: Infinity,
-                            delay: particle.delay,
-                            ease: "easeInOut",
-                        }}
-                    />
-                ))}
+  return (
+    // Menggunakan h-[100dvh] untuk mobile browser agar address bar tidak mengganggu layout
+    <div className="relative w-full h-[100dvh] bg-[#000000] text-white overflow-hidden font-sans selection:bg-blue-500/30">
+      
+      {/* --- A. FULL SCREEN LOADER (Blocking UI) --- */}
+      <AnimatePresence mode="wait">
+        {!isLoaded && (
+          <motion.div
+            key="loader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black"
+          >
+            <div className="flex flex-col items-center gap-4">
+               <div className="w-5 h-5 border border-white/20 border-t-blue-500 rounded-full animate-spin" />
+               <p className="text-xs font-mono tracking-[0.2em] text-white/50 animate-pulse">
+                 INITIALIZING SYSTEM... {progress.toFixed(0)}%
+               </p>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* Animated Ambient Glow */}
-            <motion.div 
-                animate={{ 
-                    scale: [1, 1.2, 1], 
-                    opacity: [0.3, 0.5, 0.3] 
-                }}
-                transition={{ 
-                    duration: 4, 
-                    repeat: Infinity, 
-                    ease: "easeInOut" 
-                }}
-                className="absolute top-0 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/20 blur-[120px] rounded-full pointer-events-none"
-            />
+      {/* --- B. BACKGROUND LAYER 3D --- */}
+      <div className="absolute inset-0 z-0">
+        <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+          <Suspense fallback={null}>
+            <LiquidCore />
+          </Suspense>
+        </Canvas>
+      </div>
 
-            {/* --- MAIN CONTENT --- */}
-            <motion.div 
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="relative z-20 max-w-5xl px-6 text-center" // Ubah z-index jadi 20 agar di atas partikel
-            >
-                {/* Badge Kecil di atas judul */}
-                <motion.div variants={itemVariants} className="flex justify-center mb-6">
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-neutral-900/50 backdrop-blur-md text-xs font-medium text-amber-200/80 uppercase tracking-widest">
-                        <Sparkles size={12} />
-                        <span>TUGAS PROJECT UAS VISKOM</span>
-                    </div>
-                </motion.div>
+      {/* OVERLAY VIGNETTE */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 z-0 bg-radial-gradient from-transparent to-black opacity-80 pointer-events-none" />
 
-                {/* Judul Utama */}
-                <motion.h1 
-                    variants={itemVariants}
-                    className="text-5xl md:text-7xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
-                >
-                    <span className="bg-linear-to-b from-white via-white to-neutral-500 bg-clip-text text-transparent">
-                        Touchless Hand
-                    </span>
-                    <br />
-                    <span className="bg-linear-to-r from-neutral-200 to-neutral-600 bg-clip-text text-transparent">
-                        Robot Control.
-                    </span>
-                </motion.h1>
+      {/* --- C. UI LAYER --- */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isLoaded ? 1 : 0 }} 
+        transition={{ duration: 1, delay: 0.2 }}
+        // Padding responsif: p-6 untuk mobile, md:p-12 untuk desktop
+        className="relative z-10 flex flex-col h-full justify-between p-6 md:p-12 max-w-7xl mx-auto"
+      >
+        
+        {/* TOP NAVIGATION */}
+        <nav className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-2 text-sm font-medium tracking-tight text-white/90">
+            <Layers size={18} className="text-blue-500" />
+            <span>TouchlessOS</span>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/50">
+            <span className="hover:text-white transition-colors cursor-pointer">Product</span>
+            <span className="hover:text-white transition-colors cursor-pointer">Research</span>
+            <span className="hover:text-white transition-colors cursor-pointer">Changelog</span>
+          </div>
 
-                {/* Deskripsi */}
-                <motion.p 
-                    variants={itemVariants}
-                    className="text-neutral-400 mt-6 text-lg max-w-lg mx-auto leading-relaxed font-light"
-                >
-                    Pengendalian Lengan Robot Virtual Menggunakan <span className="text-white font-normal">Hand Gesture Recognition</span>.
-                </motion.p>
+          <Link to="/login" className="text-sm font-medium text-white/90 hover:text-white transition-colors">
+            Sign In
+          </Link>
+        </nav>
 
-                {/* Tombol Aksi */}
-                <motion.div variants={itemVariants} className="mt-10">
-                    <Link to="/dashboard">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="group relative cursor-pointer inline-flex items-center gap-3 px-8 py-2 bg-white text-black rounded-full font-semibold text-lg overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
-                        >
-                            <span>Start Simulation</span>
-                            <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-                            
-                            {/* Efek Kilat pada Button */}
-                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r from-transparent via-black/10 to-transparent z-10 skew-x-12" />
-                        </motion.button>
-                    </Link>
-                </motion.div>
-            </motion.div>
+        {/* HERO CONTENT */}
+        {/* mt-0 pada mobile agar tidak overlap, -mt-50px pada desktop untuk centering */}
+        <div className="flex flex-col items-center text-center justify-center flex-grow mt-0 md:mt-[-50px]">
+          
+          <div className="mb-6 md:mb-8">
+            <div className="inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl hover:bg-white/10 transition-colors cursor-pointer group max-w-[90vw] overflow-hidden">
+              <span className="bg-blue-600 text-[10px] font-semibold px-2 py-0.5 rounded-full text-white shrink-0">NEW</span>
+              <span className="text-xs md:text-sm text-white/70 group-hover:text-white transition-colors font-medium truncate">
+                Gesture Engine 2.0 Available
+              </span>
+              <ChevronRight size={14} className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+            </div>
+          </div>
 
-            {/* Footer Text */}
-            <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5, duration: 1 }}
-                className="absolute bottom-8 text-neutral-600 text-sm font-mono z-20"
-            >
-                Farel, Apep, Jabar, Nadya, Nada
-            </motion.div>
+          {/* Typography scaling: text-4xl -> text-5xl -> text-7xl -> text-8xl */}
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 pb-2 md:pb-4">
+            Control reality.
+            <br />
+            <span className="text-white/40">Without touch.</span>
+          </h1>
+
+          <p className="mt-4 md:mt-6 text-sm sm:text-base md:text-xl text-neutral-400 max-w-xs sm:max-w-md mx-auto leading-relaxed font-normal">
+            Orchestrate robotic movements with fluid hand gestures. 
+            Precision engineering meets intuitive design.
+          </p>
+
+          <div className="mt-8 md:mt-10 flex flex-col sm:flex-row gap-4 items-center w-full sm:w-auto">
+            <Link to="/dashboard" className="w-full sm:w-auto">
+              <button className="w-full sm:w-auto relative px-8 py-3.5 bg-white text-black rounded-full font-medium text-sm transition-transform active:scale-95 hover:bg-neutral-200 flex items-center justify-center gap-2">
+                Start Simulation
+                <ArrowRight size={16} />
+                <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-black/10"></div>
+              </button>
+            </Link>
+          </div>
         </div>
-    );
+
+        {/* BOTTOM SECTION */}
+        {/* Menggunakan flex-col-reverse pada mobile jika konten terlalu padat, atau tetap row dengan scaling text */}
+        <div className="flex flex-col md:flex-row justify-center md:justify-between items-center md:items-end border-t border-white/5 pt-6 md:pt-8 pb-4 gap-4 md:gap-0">
+           <div className="hidden md:block text-xs text-neutral-500 font-medium">
+             DESIGNED IN BANDUNG
+           </div>
+           
+           {/* Grid layout untuk stats di mobile agar rapi, flex di desktop */}
+           <div className="grid grid-cols-3 w-full md:w-auto gap-4 md:gap-8 justify-items-center md:justify-items-start">
+             <div className="text-center md:text-left">
+               <p className="text-[10px] md:text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">Latency</p>
+               <p className="text-base md:text-lg text-white font-medium tracking-tight">12ms</p>
+             </div>
+             <div className="text-center md:text-left">
+               <p className="text-[10px] md:text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">Accuracy</p>
+               <p className="text-base md:text-lg text-white font-medium tracking-tight">99.8%</p>
+             </div>
+             <div className="text-center md:text-left">
+               <p className="text-[10px] md:text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">FPS</p>
+               <p className="text-base md:text-lg text-white font-medium tracking-tight">60Hz</p>
+             </div>
+           </div>
+           
+           {/* Menampilkan teks ini di bawah stats pada mobile */}
+           <div className="block md:hidden text-[10px] text-neutral-600 font-medium mt-2">
+             DESIGNED IN BANDUNG
+           </div>
+        </div>
+
+      </motion.div>
+    </div>
+  );
 };
 
 export default LandingPage;
